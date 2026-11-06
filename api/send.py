@@ -17,11 +17,11 @@ class handler(BaseHTTPRequestHandler):
         except:
             return self._json(400, {"error": "JSON inválido"})
 
-        webhook  = data.get("webhook", "").strip()
-        message  = data.get("message", "").strip()
-        amount   = data.get("amount", 1)
+        webhook   = data.get("webhook", "").strip()
+        message   = data.get("message", "").strip()
+        amount    = data.get("amount", 1)
         image_b64 = data.get("image")
-        filename = data.get("filename") or "image.png"
+        filename  = data.get("filename") or "image.png"
 
         if not webhook:
             return self._json(400, {"error": "Webhook obligatorio"})
@@ -35,7 +35,6 @@ class handler(BaseHTTPRequestHandler):
             amount = 1
         amount = max(1, min(amount, 50))
 
-        # Preparar archivo si existe
         file_bytes = None
         if image_b64:
             try:
@@ -50,7 +49,6 @@ class handler(BaseHTTPRequestHandler):
         for i in range(amount):
             try:
                 if file_bytes:
-                    # Envío con imagen (multipart)
                     files = {
                         "file": (filename, BytesIO(file_bytes), "application/octet-stream")
                     }
@@ -58,7 +56,6 @@ class handler(BaseHTTPRequestHandler):
                         "username": BOT_NAME,
                         "content": message if message else None
                     }
-                    # Discord espera payload_json cuando hay archivos
                     response = requests.post(
                         webhook,
                         data={"payload_json": json.dumps(payload)},
@@ -66,7 +63,6 @@ class handler(BaseHTTPRequestHandler):
                         timeout=15
                     )
                 else:
-                    # Solo texto
                     payload = {
                         "username": BOT_NAME,
                         "content": message if message else " "
@@ -92,7 +88,6 @@ class handler(BaseHTTPRequestHandler):
                 failed += 1
                 logs.append({"msg": f"#{i+1} excepción → {str(e)[:80]}", "type": "err"})
 
-            # Pequeña pausa entre mensajes
             if i < amount - 1:
                 time.sleep(0.4)
 
