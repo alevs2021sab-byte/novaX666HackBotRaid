@@ -1,1 +1,2 @@
-requests==2.32.3
+# Sin dependencias externas — usa urllib de la stdlib.
+# Solo presente para que Vercel detecte el runtime Python.
