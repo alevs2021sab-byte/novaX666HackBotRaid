@@ -1,112 +1,144 @@
-from http.server import BaseHTTPRequestHandler
+import os
+import re
 import json
-import base64
-import time
-import requests
-from io import BytesIO
+import uuid
+import urllib.request
+import urllib.error
+from http.server import BaseHTTPRequestHandler
+from email.parser import BytesParser
+from email.policy import default as email_default
 
-BOT_NAME = "666 HACK ON TOP 🔥"
+DISCORD_RE = re.compile(r"^https://discord\.com/api/webhooks/", re.IGNORECASE)
+BOT_NAME = "666 H4CK ON TOP 🔥"
+MAX_FILE_BYTES = 8 * 1024 * 1024
+MAX_MESSAGE_CHARS = 2000
+UA = "666H4CK-Novadynamics/1.0"
+
+
+def _json(status: int, payload: dict):
+    body = json.dumps(payload).encode("utf-8")
+    return status, {"Content-Type": "application/json"}, body
+
+
+def _parse_multipart(content_type: str, body: bytes):
+    """Parse a multipart/form-data body into (fields: dict[str,str], files: dict[str,tuple[filename, bytes, ctype]])."""
+    if "boundary=" not in content_type:
+        return {}, {}
+    boundary = content_type.split("boundary=", 1)[1].strip().strip('"')
+    raw = b"Content-Type: " + content_type.encode() + b"\r\n\r\n" + body
+    msg = BytesParser(policy=email_default).parsebytes(raw)
+    fields, files = {}, {}
+    if not msg.is_multipart():
+        return fields, files
+    for part in msg.iter_parts():
+        name = part.get_param("name", header="content-disposition")
+        if not name:
+            continue
+        filename = part.get_filename()
+        payload = part.get_payload(decode=True) or b""
+        if filename:
+            files[name] = (filename, payload, part.get_content_type())
+        else:
+            fields[name] = payload.decode("utf-8", errors="replace")
+    return fields, files
+
+
+def _build_multipart(payload_json: str, file_part):
+    boundary = "----666H4CK" + uuid.uuid4().hex
+    parts = []
+    parts.append(("--" + boundary).encode())
+    parts.append(b'Content-Disposition: form-data; name="payload_json"')
+    parts.append(b"Content-Type: application/json")
+    parts.append(b"")
+    parts.append(payload_json.encode("utf-8"))
+    if file_part:
+        filename, data, ctype = file_part
+        parts.append(("--" + boundary).encode())
+        parts.append(
+            f'Content-Disposition: form-data; name="files[0]"; filename="{filename}"'.encode()
+        )
+        parts.append(f"Content-Type: {ctype or 'application/octet-stream'}".encode())
+        parts.append(b"")
+        parts.append(data)
+    parts.append(("--" + boundary + "--").encode())
+    parts.append(b"")
+    body = b"\r\n".join(parts)
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    return headers, body
+
 
 class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length)
-
-        try:
-            data = json.loads(body)
-        except:
-            return self._json(400, {"error": "JSON inválido"})
-
-        webhook   = data.get("webhook", "").strip()
-        message   = data.get("message", "").strip()
-        amount    = data.get("amount", 1)
-        image_b64 = data.get("image")
-        filename  = data.get("filename") or "image.png"
-
-        if not webhook:
-            return self._json(400, {"error": "Webhook obligatorio"})
-
-        if "discord.com/api/webhooks/" not in webhook and "discordapp.com/api/webhooks/" not in webhook:
-            return self._json(400, {"error": "Webhook inválido"})
-
-        try:
-            amount = int(amount)
-        except:
-            amount = 1
-        amount = max(1, min(amount, 50))
-
-        file_bytes = None
-        if image_b64:
-            try:
-                file_bytes = base64.b64decode(image_b64)
-            except:
-                return self._json(400, {"error": "Imagen base64 inválida"})
-
-        logs = []
-        success = 0
-        failed = 0
-
-        for i in range(amount):
-            try:
-                if file_bytes:
-                    files = {
-                        "file": (filename, BytesIO(file_bytes), "application/octet-stream")
-                    }
-                    payload = {
-                        "username": BOT_NAME,
-                        "content": message if message else None
-                    }
-                    response = requests.post(
-                        webhook,
-                        data={"payload_json": json.dumps(payload)},
-                        files=files,
-                        timeout=15
-                    )
-                else:
-                    payload = {
-                        "username": BOT_NAME,
-                        "content": message if message else " "
-                    }
-                    response = requests.post(
-                        webhook,
-                        json=payload,
-                        timeout=15
-                    )
-
-                if response.status_code in (200, 204):
-                    success += 1
-                    logs.append({"msg": f"#{i+1} enviado", "type": "ok"})
-                elif response.status_code == 429:
-                    failed += 1
-                    logs.append({"msg": f"#{i+1} rate-limit 429", "type": "err"})
-                    time.sleep(2.0)
-                else:
-                    failed += 1
-                    logs.append({"msg": f"#{i+1} error {response.status_code}", "type": "err"})
-
-            except Exception as e:
-                failed += 1
-                logs.append({"msg": f"#{i+1} excepción → {str(e)[:80]}", "type": "err"})
-
-            if i < amount - 1:
-                time.sleep(0.4)
-
-        return self._json(200, {
-            "success": success,
-            "failed": failed,
-            "logs": logs
-        })
-
-    def _json(self, status, obj):
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(json.dumps(obj).encode())
-
     def do_OPTIONS(self):
-        self.send_response(200)
+        self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
+
+    def do_POST(self):
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > MAX_FILE_BYTES + 64 * 1024:
+                return self._emit(*_json(400, {"error": "Cuerpo inválido o demasiado grande."}))
+
+            body = self.rfile.read(length)
+            ctype = self.headers.get("Content-Type", "")
+            if not ctype.startswith("multipart/form-data"):
+                return self._emit(*_json(400, {"error": "Se esperaba multipart/form-data."}))
+
+            fields, files = _parse_multipart(ctype, body)
+
+            client_webhook = (fields.get("webhook") or "").strip()
+            webhook = (os.environ.get("WEBHOOK_URL") or client_webhook).strip()
+            message = (fields.get("message") or "").strip()
+            file_part = files.get("file")
+
+            if not DISCORD_RE.match(webhook):
+                return self._emit(*_json(400, {"error": "Webhook inválido."}))
+            if not message:
+                return self._emit(*_json(400, {"error": "Mensaje requerido."}))
+            if len(message) > MAX_MESSAGE_CHARS:
+                return self._emit(*_json(400, {"error": f"Mensaje > {MAX_MESSAGE_CHARS} caracteres."}))
+
+            if file_part:
+                _, data, _ = file_part
+                if len(data) > MAX_FILE_BYTES:
+                    return self._emit(*_json(400, {"error": "Archivo > 8 MB."}))
+
+            payload_json = json.dumps({
+                "username": BOT_NAME,
+                "content": message,
+                "allowed_mentions": {"parse": []},
+            }, ensure_ascii=False)
+
+            fwd_headers, fwd_body = _build_multipart(payload_json, file_part)
+            fwd_headers["User-Agent"] = UA
+
+            req = urllib.request.Request(webhook, data=fwd_body, headers=fwd_headers, method="POST")
+            try:
+                with urllib.request.urlopen(req, timeout=20) as resp:
+                    status = resp.status
+            except urllib.error.HTTPError as e:
+                if e.code == 429:
+                    retry = e.headers.get("Retry-After", "?")
+                    return self._emit(*_json(429, {"error": f"Rate limit. Reintenta en {retry} s."}))
+                detail = e.read().decode("utf-8", errors="replace")[:200]
+                return self._emit(*_json(e.code, {"error": f"Discord: {e.code} {detail}"}))
+            except Exception:
+                return self._emit(*_json(502, {"error": "No se pudo contactar Discord."}))
+
+            if status >= 400:
+                return self._emit(*_json(status, {"error": f"Discord: {status}"}))
+
+            return self._emit(*_json(200, {"ok": True}))
+
+        except Exception as exc:
+            return self._emit(*_json(500, {"error": f"Error interno: {type(exc).__name__}"}))
+
+    def _emit(self, status, headers, body):
+        self.send_response(status)
+        for k, v in headers.items():
+            self.send_header(k, v)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
