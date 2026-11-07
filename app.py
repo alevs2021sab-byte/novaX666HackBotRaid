@@ -4,7 +4,7 @@ import json
 import uuid
 import urllib.request
 import urllib.error
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__)
 
@@ -36,6 +36,18 @@ def _build_multipart(payload_json: str, file_part):
     body = b"\r\n".join(parts)
     headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
     return headers, body
+
+@app.route("/")
+def index():
+    return send_from_directory("public", "index.html")
+
+@app.route("/style.css")
+def style():
+    return send_from_directory("public", "style.css")
+
+@app.route("/script.js")
+def script():
+    return send_from_directory("public", "script.js")
 
 @app.route("/api/send", methods=["POST"])
 def send():
