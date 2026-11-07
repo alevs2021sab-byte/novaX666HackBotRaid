@@ -1,380 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>666 H4CK × NOVADYNAMICS</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-  :root {
-    --bg: #050505;
-    --surface: #0c0c0c;
-    --surface2: #121212;
-    --border: #1f1f1f;
-    --red: #c41e3a;
-    --red-bright: #e63946;
-    --red-dim: #8b1a2b;
-    --text: #e8e8e8;
-    --text-dim: #888;
-    --text-muted: #555;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', system-ui, sans-serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(196, 30, 58, 0.08), transparent),
-      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(196, 30, 58, 0.04), transparent);
-  }
-
-  .container { width: 100%; max-width: 520px; }
-
-  header { text-align: center; margin-bottom: 48px; }
-
-  .brand {
-    font-size: 13px;
-    letter-spacing: 0.35em;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin-bottom: 18px;
-    font-weight: 500;
-  }
-
-  .logo {
-    font-size: 42px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1;
-    color: var(--text);
-  }
-  .logo span { color: var(--red); }
-
-  .x-mark {
-    display: block;
-    font-size: 18px;
-    font-weight: 300;
-    color: var(--text-dim);
-    margin: 8px 0;
-    letter-spacing: 0.4em;
-  }
-
-  .sub-brand {
-    font-size: 14px;
-    letter-spacing: 0.25em;
-    color: var(--text-dim);
-    font-weight: 500;
-    margin-top: 6px;
-  }
-
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-  }
-
-  .field { margin-bottom: 22px; }
-  .field:last-of-type { margin-bottom: 28px; }
-
-  label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-  }
-  label .req { color: var(--red); margin-left: 4px; }
-
-  input[type="text"],
-  input[type="number"],
-  input[type="url"],
-  textarea {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 13px 16px;
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    transition: border-color 0.2s, background 0.2s;
-    outline: none;
-  }
-  input:focus, textarea:focus {
-    border-color: var(--red-dim);
-    background: #141414;
-  }
-  textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
-  input[type="number"] { font-family: 'JetBrains Mono', monospace; }
-
-  .file-wrap { position: relative; }
-  .file-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    background: var(--surface2);
-    border: 1px dashed var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .file-btn:hover { border-color: var(--red-dim); background: #141414; }
-  .file-btn.has-file { border-style: solid; border-color: var(--red-dim); }
-
-  .file-icon {
-    width: 36px; height: 36px;
-    background: #1a1a1a;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; flex-shrink: 0;
-  }
-  .file-text { flex: 1; text-align: left; }
-  .file-text .name { font-size: 13px; font-weight: 500; color: var(--text); }
-  .file-text .hint { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
-  input[type="file"] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer;
-  }
-
-  .preview {
-    margin-top: 12px;
-    display: none;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-  }
-  .preview img {
-    width: 100%; max-height: 160px;
-    object-fit: cover; display: block;
-  }
-
-  .start-btn {
-    width: 100%;
-    background: linear-gradient(180deg, var(--red-bright), var(--red));
-    border: none;
-    border-radius: 10px;
-    padding: 16px;
-    color: #fff;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
-    box-shadow: 0 4px 20px rgba(196, 30, 58, 0.35);
-  }
-  .start-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 28px rgba(196, 30, 58, 0.5);
-  }
-  .start-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-
-  .status {
-    margin-top: 24px;
-    padding: 16px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--text-dim);
-    max-height: 180px;
-    overflow-y: auto;
-    display: none;
-  }
-  .status.visible { display: block; }
-  .status .ok { color: #4ade80; }
-  .status .err { color: var(--red-bright); }
-  .status .info { color: #60a5fa; }
-
-  footer {
-    margin-top: 40px;
-    text-align: center;
-    font-size: 11px;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-  }
-  footer span { color: var(--red-dim); }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>666 H4CK × NOVADYNAMICS</title>
+  <meta name="description" content="Panel de envío — 666 H4CK ON TOP 🔥" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="brand">Professional Discord Tool</div>
-      <div class="logo">666 <span>H4CK</span></div>
-      <div class="x-mark">×</div>
-      <div class="sub-brand">NOVADYNAMICS</div>
-    </header>
-
-    <div class="panel">
-      <div class="field">
-        <label>Webhook URL <span class="req">*</span></label>
-        <input type="url" id="webhook" placeholder="https://discord.com/api/webhooks/..." required>
-      </div>
+  <main class="wrap">
+    <form class="card" id="form" novalidate>
+      <header class="brand">
+        <h1>666 H4CK<span class="x">×</span>NOVADYNAMICS</h1>
+        <p>panel de envío — 666 H4CK ON TOP 🔥</p>
+      </header>
 
       <div class="field">
-        <label>Mensaje</label>
-        <textarea id="message" placeholder="Escribe el mensaje que se enviará..."></textarea>
-      </div>
-
-      <div class="field">
-        <label>Imagen (opcional)</label>
-        <div class="file-wrap">
-          <div class="file-btn" id="fileBtn">
-            <div class="file-icon">📎</div>
-            <div class="file-text">
-              <div class="name" id="fileName">Seleccionar archivo</div>
-              <div class="hint">PNG, JPG, GIF, WEBP · máx 8 MB</div>
-            </div>
-          </div>
-          <input type="file" id="image" accept="image/png,image/jpeg,image/gif,image/webp">
-        </div>
-        <div class="preview" id="preview">
-          <img id="previewImg" alt="preview">
+        <label class="label" for="photo">Adjuntar imagen</label>
+        <input id="photo" class="file" type="file" accept="image/*" />
+        <div class="preview" id="preview" style="display:none">
+          <img id="previewImg" alt="preview" />
+          <span id="previewName"></span>
+          <button type="button" id="clearFile">quitar</button>
         </div>
       </div>
 
       <div class="field">
-        <label>Cantidad de mensajes</label>
-        <input type="number" id="amount" value="10" min="1" max="50">
+        <label class="label" for="msg">Mensaje</label>
+        <textarea id="msg" class="textarea" placeholder="Lo que quieras mandar…"></textarea>
       </div>
 
-      <button class="start-btn" id="startBtn">Start Raid</button>
-      <div class="status" id="status"></div>
-    </div>
+      <div class="field">
+        <label class="label" for="qty">Cantidad</label>
+        <input id="qty" class="input" type="number" min="1" max="1" value="1" readonly />
+      </div>
 
-    <footer>
-      666 H4CK <span>×</span> NOVADYNAMICS · private use
-    </footer>
-  </div>
+      <div class="field">
+        <label class="label" for="wh">Webhook (obligatorio)</label>
+        <input id="wh" class="input" type="url"
+          placeholder="https://discord.com/api/webhooks/…" required />
+      </div>
 
-<script>
-  const webhookInput = document.getElementById('webhook');
-  const messageInput = document.getElementById('message');
-  const amountInput  = document.getElementById('amount');
-  const imageInput   = document.getElementById('image');
-  const fileBtn      = document.getElementById('fileBtn');
-  const fileName     = document.getElementById('fileName');
-  const preview      = document.getElementById('preview');
-  const previewImg   = document.getElementById('previewImg');
-  const startBtn     = document.getElementById('startBtn');
-  const statusBox    = document.getElementById('status');
+      <button class="btn" type="submit" id="btn">start</button>
+      <div class="msg" id="status" style="display:none"></div>
 
-  let selectedFile = null;
-  let imageBase64  = null;
-  let imageName    = null;
+      <div class="foot">666 H4CK × NOVADYNAMICS — un mensaje por envío</div>
+    </form>
+  </main>
 
-  imageInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-      selectedFile = null;
-      imageBase64 = null;
-      imageName = null;
-      fileName.textContent = 'Seleccionar archivo';
-      fileBtn.classList.remove('has-file');
-      preview.style.display = 'none';
-      return;
-    }
-    if (file.size > 8 * 1024 * 1024) {
-      log('Archivo demasiado grande (máx 8 MB)', 'err');
-      imageInput.value = '';
-      return;
-    }
-    selectedFile = file;
-    imageName = file.name;
-    fileName.textContent = file.name;
-    fileBtn.classList.add('has-file');
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      imageBase64 = reader.result.split(',')[1]; // solo el base64 puro
-      previewImg.src = reader.result;
-      preview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-  });
-
-  function log(msg, type = 'info') {
-    statusBox.classList.add('visible');
-    const line = document.createElement('div');
-    line.className = type;
-    const time = new Date().toLocaleTimeString('es-ES', { hour12: false });
-    line.textContent = `[${time}] ${msg}`;
-    statusBox.appendChild(line);
-    statusBox.scrollTop = statusBox.scrollHeight;
-  }
-
-  startBtn.addEventListener('click', async () => {
-    const webhook = webhookInput.value.trim();
-    const message = messageInput.value.trim();
-    let amount = parseInt(amountInput.value, 10);
-
-    if (!webhook) {
-      log('Webhook es obligatorio', 'err');
-      return;
-    }
-    if (!webhook.includes('discord.com/api/webhooks/') && !webhook.includes('discordapp.com/api/webhooks/')) {
-      log('URL de webhook inválida', 'err');
-      return;
-    }
-    if (isNaN(amount) || amount < 1) amount = 1;
-    if (amount > 50) amount = 50;
-
-    startBtn.disabled = true;
-    statusBox.innerHTML = '';
-    statusBox.classList.add('visible');
-    log(`Enviando ${amount} mensaje(s) vía backend...`, 'info');
-
-    try {
-      const res = await fetch('/api/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          webhook,
-          message,
-          amount,
-          image: imageBase64 || null,
-          filename: imageName || null
-        })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        log(data.error || 'Error en el servidor', 'err');
-        startBtn.disabled = false;
-        return;
-      }
-
-      // Mostrar resultados del backend
-      if (data.logs) {
-        data.logs.forEach(l => log(l.msg, l.type));
-      }
-      log(`Terminado · ${data.success} ok · ${data.failed} errores`, data.failed === 0 ? 'ok' : 'info');
-
-    } catch (err) {
-      log('Error de conexión con el backend: ' + err.message, 'err');
-    }
-
-    startBtn.disabled = false;
-  });
-</script>
+  <script src="/script.js"></script>
 </body>
-                                        </html>
+  </html>
