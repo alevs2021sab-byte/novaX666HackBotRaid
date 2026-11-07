@@ -1,9 +1,9 @@
-# api/send.py
+# app.py (archivo en la raíz del proyecto, NO dentro de carpeta api/)
 # ⚠️ PROPÓSITO ÚNICAMENTE EDUCATIVO
 # ADVERTENCIA: EJECUTA ESTE CÓDIGO SÓLO EN SERVIDORES DE DISCORD DONDE SEAS
 # ADMINISTRADOR AUTORIZADO. NO LO USES PARA HACER SPAM NI CON WEBHOOKS AJENOS.
 # EN ENTORNOS SERVERLESS COMO VERCEL EXISTE LÍMITE DE TIEMPO DE EJECUCIÓN;
-# PUEDE INTERRUMPIRSE ANTES DE FINALIZAR TODOS LOS ENVÍOS.
+# PUEDE INTERRUMPIRSE ANTES DE FINALIZAR TODOS LOS ENVÍOS Y NO DEVOLVER RESPUESTA.
 
 import os
 import re
@@ -22,9 +22,8 @@ MAX_FILE_BYTES = 8 * 1024 * 1024
 MAX_MESSAGE_CHARS = 2000
 UA = "Ejemplo‑Educativo‑Flask‑Webhook/1.0"
 
-# Valores configurables desde variables de entorno, con límites de seguridad
+# Configuración por variable de entorno con límite de seguridad
 MIN_COUNT = 1
-# Si no hay variable de entorno usa 60 como valor por defecto, límite seguro máximo 60
 try:
     MAX_COUNT = int(os.environ.get("WEBHOOK_MAX_COUNT", "60"))
 except ValueError:
@@ -35,9 +34,10 @@ try:
     DELAY_BETWEEN_REQUESTS = float(os.environ.get("WEBHOOK_DELAY", "1.2"))
 except ValueError:
     DELAY_BETWEEN_REQUESTS = 1.2
-DELAY_BETWEEN_REQUESTS = max(DELAY_BETWEEN_REQUESTS, 0.8)  # no permitir retardos demasiado cortos
+DELAY_BETWEEN_REQUESTS = max(DELAY_BETWEEN_REQUESTS, 0.8)
 
 MAX_RETRIES_429 = 2
+SAFE_TIMEOUT_SEC = 9.0  # Margen antes del corte (~10 s Vercel gratuito)
 
 def _build_multipart(payload_json: str, file_part):
     boundary = "----EducWebHook" + uuid.uuid4().hex
@@ -101,6 +101,8 @@ def script():
 
 @app.route("/api/send", methods=["POST"])
 def send():
+    start_time = time.time()
+
     count_raw = request.form.get("count", str(MIN_COUNT))
     try:
         count = int(count_raw)
@@ -135,9 +137,17 @@ def send():
     }, ensure_ascii=False)
 
     results = []
+    corte_por_tiempo = False
+
     for idx in range(count):
+        elapsed = time.time() - start_time
+        if elapsed >= SAFE_TIMEOUT_SEC:
+            corte_por_tiempo = True
+            break
+
         res = _send_single_webhook(webhook, payload_json, file_part)
         results.append(res)
+
         if idx != count - 1:
             time.sleep(DELAY_BETWEEN_REQUESTS)
 
@@ -145,8 +155,10 @@ def send():
     return jsonify({
         "ok": True,
         "solicitados": count,
-        "limite_actual": MAX_COUNT,
         "enviados_exitosos": success_count,
+        "cantidad_procesada": len(results),
+        "advertencia_tiempo": "¡Posible corte por límite‑Vercel! No se terminó la secuencia" if corte_por_tiempo else "Secuencia completada dentro del margen de tiempo",
+        "limite_actual": MAX_COUNT,
         "detalles": results
     })
 
@@ -156,4 +168,3 @@ def health():
 
 if __name__ == "__main__":
     app.run(debug=False)
-            
