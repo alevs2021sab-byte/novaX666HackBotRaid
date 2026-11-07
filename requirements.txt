@@ -1,2 +1,1 @@
-# Sin dependencias externas — usa urllib de la stdlib.
-# Solo presente para que Vercel detecte el runtime Python.
+Flask==3.0.3
