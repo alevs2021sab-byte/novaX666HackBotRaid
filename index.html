@@ -337,7 +337,7 @@
     startBtn.disabled = true;
     statusBox.innerHTML = '';
     statusBox.classList.add('visible');
-    log(`Enviando ${amount} mensaje(s) vía backend...`, 'info');
+    log(`Enviando ${amount} mensaje(s)...`, 'info');
 
     try {
       const res = await fetch('/api/send', {
@@ -366,11 +366,11 @@
       log(`Terminado · ${data.success} ok · ${data.failed} errores`, data.failed === 0 ? 'ok' : 'info');
 
     } catch (err) {
-      log('Error de conexión con el backend: ' + err.message, 'err');
+      log('Error de conexión: ' + err.message, 'err');
     }
 
     startBtn.disabled = false;
   });
 </script>
 </body>
-        </html>
+  </html>
