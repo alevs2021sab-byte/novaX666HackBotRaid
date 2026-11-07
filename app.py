@@ -1,11 +1,9 @@
 # api/send.py
 # ⚠️ PROPÓSITO ÚNICAMENTE EDUCATIVO
 # ADVERTENCIA: EJECUTA ESTE CÓDIGO SÓLO EN SERVIDORES DE DISCORD DONDE SEAS
-# ADMINISTRADOR AUTORIZADO. NO LO USES PARA HACER SPAM, RÁFAGAS NO AUTORIZADAS
-# NI CON WEBHOOKS DE TERCEROS. VIOLA LAS CONDICIONES DE SERVICIO DE DISCORD.
-# ADEMÁS: EN ENTORNOS SERVERLESS COMO VERCEL EXISTE UN LÍMITE DE TIEMPO DE
-# EJECUCIÓN (~10 s plan gratuito). NO DISEÑADO PARA EJECUCIÓN INDEFINIDA;
-# ES POSIBLE QUE SE INTERROMPA ANTES DE TERMINAR TODOS LOS ENVÍOS SOLICITADOS.
+# ADMINISTRADOR AUTORIZADO. NO LO USES PARA HACER SPAM NI CON WEBHOOKS AJENOS.
+# EN ENTORNOS SERVERLESS COMO VERCEL EXISTE LÍMITE DE TIEMPO DE EJECUCIÓN;
+# PUEDE INTERRUMPIRSE ANTES DE FINALIZAR TODOS LOS ENVÍOS.
 
 import os
 import re
@@ -24,11 +22,22 @@ MAX_FILE_BYTES = 8 * 1024 * 1024
 MAX_MESSAGE_CHARS = 2000
 UA = "Ejemplo‑Educativo‑Flask‑Webhook/1.0"
 
-# Parámetros añadidos según solicitud
+# Valores configurables desde variables de entorno, con límites de seguridad
 MIN_COUNT = 1
-MAX_COUNT = 60
-DELAY_BETWEEN_REQUESTS = 0.7   # Retardo respetuoso entre mensajes (segundos)
-MAX_RETRIES_429 = 2             # Número máximo de reintentos por límite‑de‑tasa
+# Si no hay variable de entorno usa 60 como valor por defecto, límite seguro máximo 60
+try:
+    MAX_COUNT = int(os.environ.get("WEBHOOK_MAX_COUNT", "60"))
+except ValueError:
+    MAX_COUNT = 60
+MAX_COUNT = min(MAX_COUNT, 60)
+
+try:
+    DELAY_BETWEEN_REQUESTS = float(os.environ.get("WEBHOOK_DELAY", "1.2"))
+except ValueError:
+    DELAY_BETWEEN_REQUESTS = 1.2
+DELAY_BETWEEN_REQUESTS = max(DELAY_BETWEEN_REQUESTS, 0.8)  # no permitir retardos demasiado cortos
+
+MAX_RETRIES_429 = 2
 
 def _build_multipart(payload_json: str, file_part):
     boundary = "----EducWebHook" + uuid.uuid4().hex
@@ -54,7 +63,6 @@ def _build_multipart(payload_json: str, file_part):
     return headers, body
 
 def _send_single_webhook(webhook_url, payload_json, file_part):
-    """Función auxiliar: envía un solo mensaje, con reintentos ante 429."""
     fwd_headers, fwd_body = _build_multipart(payload_json, file_part)
     fwd_headers["User-Agent"] = UA
     req = urllib.request.Request(
@@ -93,7 +101,6 @@ def script():
 
 @app.route("/api/send", methods=["POST"])
 def send():
-    # Leer y validar parámetro count añadido
     count_raw = request.form.get("count", str(MIN_COUNT))
     try:
         count = int(count_raw)
@@ -129,10 +136,8 @@ def send():
 
     results = []
     for idx in range(count):
-        # ⚠️ Riesgo: en Vercel el tiempo‑límite puede interrumpir aquí
         res = _send_single_webhook(webhook, payload_json, file_part)
         results.append(res)
-        # No pausar tras el último mensaje
         if idx != count - 1:
             time.sleep(DELAY_BETWEEN_REQUESTS)
 
@@ -140,6 +145,7 @@ def send():
     return jsonify({
         "ok": True,
         "solicitados": count,
+        "limite_actual": MAX_COUNT,
         "enviados_exitosos": success_count,
         "detalles": results
     })
@@ -150,4 +156,4 @@ def health():
 
 if __name__ == "__main__":
     app.run(debug=False)
-    
+            
